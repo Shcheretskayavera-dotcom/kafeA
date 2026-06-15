@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ — Ресторан Amelie</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background: #fefaf5; color: #2c2418; padding: 20px; }
+        .header { background: #2c2418; color: #f9e7d9; padding: 1rem 2rem; border-radius: 20px; margin-bottom: 2rem; }
+        .admin-tabs { display: flex; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 2rem; }
+        .admin-tab { background: #f0e4d8; border: none; padding: 0.7rem 1.5rem; border-radius: 40px; cursor: pointer; }
+        .admin-tab.active { background: #2c2418; color: white; }
+        .admin-tab-content { display: none; }
+        .admin-tab-content.active { display: block; }
+        .admin-menu-item { background: white; padding: 1rem; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .btn-secondary { background: #2c2418; color: white; border: none; padding: 5px 12px; border-radius: 20px; cursor: pointer; }
+        .toast { position: fixed; bottom: 20px; left: 20px; background: #2c2418; color: white; padding: 12px 20px; border-radius: 40px; z-index: 9999; animation: slideIn 0.3s ease; }
+        @keyframes slideIn { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        
+        /* Стили для формы входа */
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+        .login-box {
+            background: white;
+            padding: 2rem;
+            border-radius: 28px;
+            width: 90%;
+            max-width: 350px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        .login-box h2 { margin-bottom: 1.5rem; color: #2c2418; }
+        .login-box input { width: 100%; padding: 12px; margin-bottom: 1rem; border: 1px solid #e2d4c8; border-radius: 40px; font-size: 1rem; text-align: center; }
+        .login-box button { width: 100%; padding: 12px; background: #c97e5a; color: white; border: none; border-radius: 40px; font-size: 1rem; cursor: pointer; font-weight: bold; }
+        .login-box button:hover { background: #b06442; }
+        .error-msg { color: #c97e5a; margin-top: 10px; font-size: 0.85rem; }
+        .main-content { display: none; }
+        .main-content.visible { display: block; }
+    </style>
+</head>
+<body>
+
+<!-- Форма входа -->
+<div id="loginOverlay" class="login-overlay">
+    <div class="login-box">
+        <h2>👑 Вход в админ-панель</h2>
+        <input type="password" id="passwordInput" placeholder="Введите пароль" autofocus>
+        <button id="loginBtn">Войти</button>
+        <div id="loginError" class="error-msg"></div>
+    </div>
+</div>
+
+<!-- Основной контент -->
+<div id="mainContent" class="main-content">
+    <div class="header"><h1>👑 Админ-панель — Ресторан Amelie</h1></div>
+    <div class="admin-tabs">
+        <button class="admin-tab active" data-tab="menu">📋 Управление меню</button>
+        <button class="admin-tab" data-tab="orders">📦 Все заказы</button>
+        <button class="admin-tab" data-tab="reports">📊 Отчёты</button>
+    </div>
+    <div id="adminTabMenu" class="admin-tab-content active"><h2>Редактирование меню</h2><div id="adminMenuList"></div></div>
+    <div id="adminTabOrders" class="admin-tab-content"><h2>Все заказы</h2><div id="adminOrdersList"></div></div>
+    <div id="adminTabReports" class="admin-tab-content"><h2>Финансовая аналитика</h2><div id="reportStats"></div></div>
+</div>
+
+<script>
+    // ПАРОЛЬ ДЛЯ АДМИНА (можно поменять)
+    const ADMIN_PASSWORD = "admin2026";
+
+    let menuData = [
+        { id: 1, name: "Цезарь с курицей", category: "Салаты", price: 12.90, available: true },
+        { id: 2, name: "Том Ям", category: "Супы", price: 14.50, available: true },
+        { id: 3, name: "Рибай стейк", category: "Основные блюда", price: 34.90, available: true },
+        { id: 4, name: "Паста Карбонара", category: "Основные блюда", price: 16.90, available: true },
+        { id: 5, name: "Чизкейк", category: "Десерты", price: 6.90, available: true },
+        { id: 6, name: "Американо", category: "Напитки", price: 3.50, available: true },
+        { id: 7, name: "Матча латте", category: "Напитки", price: 5.20, available: true },
+        { id: 8, name: "Брускетта", category: "Закуски", price: 8.90, available: true },
+        { id: 9, name: "Греческий салат", category: "Салаты", price: 11.50, available: true },
+        { id: 10, name: "Картошка фри", category: "Закуски", price: 4.90, available: true }
+    ];
+    let orders = [];
+
+    function checkAuth() {
+        const isAuthenticated = sessionStorage.getItem("admin_auth");
+        if (isAuthenticated === "true") {
+            document.getElementById("loginOverlay").style.display = "none";
+            document.getElementById("mainContent").classList.add("visible");
+            loadData();
+            renderAdminMenu();
+            renderAdminOrders();
+            renderReports();
+            startAutoRefresh();
+        } else {
+            document.getElementById("loginOverlay").style.display = "flex";
+            document.getElementById("mainContent").classList.remove("visible");
+        }
+    }
+
+    function login() {
+        const password = document.getElementById("passwordInput").value;
+        if (password === ADMIN_PASSWORD) {
+            sessionStorage.setItem("admin_auth", "true");
+            checkAuth();
+        } else {
+            document.getElementById("loginError").innerText = "❌ Неверный пароль";
+        }
+    }
+
+    function loadData() { 
+        let m = localStorage.getItem("ameli_menu"); 
+        if(m) menuData = JSON.parse(m); 
+        let o = localStorage.getItem("ameli_orders"); 
+        if(o) orders = JSON.parse(o); 
+    }
+    
+    function saveAll() { 
+        localStorage.setItem("ameli_menu", JSON.stringify(menuData)); 
+        localStorage.setItem("ameli_orders", JSON.stringify(orders)); 
+    }
+    
+    function showToast(msg) { 
+        let t = document.createElement("div"); 
+        t.className = "toast";
+        t.innerText = msg; 
+        document.body.appendChild(t); 
+        setTimeout(() => t.remove(), 2000); 
+    }
+    
+    function getStatusText(s) { 
+        let m = { new: "🆕 Новый", cooking: "👨‍🍳 Готовится", ready: "✅ Готов", completed: "💰 Завершён" }; 
+        return m[s] || s; 
+    }
+    
+    function renderAdminMenu() { 
+        let c = document.getElementById("adminMenuList"); 
+        if(!c) return; 
+        c.innerHTML = menuData.map(i => `
+            <div class="admin-menu-item">
+                <div><strong>${i.name}</strong> (${i.category}) - ${i.price.toFixed(2)} Br</div>
+                <div><button onclick="toggleAvail(${i.id})" class="btn-secondary">${i.available ? "✓ Доступно" : "✗ Скрыть"}</button></div>
+            </div>
+        `).join(''); 
+    }
+    
+    window.toggleAvail = function(id) { 
+        let i = menuData.find(i => i.id === id); 
+        if(i) { 
+            i.available = !i.available; 
+            saveAll(); 
+            renderAdminMenu(); 
+            showToast(`${i.name} ${i.available ? "доступно" : "скрыто"}`); 
+        } 
+    };
+    
+    function renderAdminOrders() { 
+        let c = document.getElementById("adminOrdersList"); 
+        if(!c) return; 
+        if(orders.length === 0) { 
+            c.innerHTML = "<p>Нет заказов</p>"; 
+            return; 
+        } 
+        c.innerHTML = orders.map(o => `
+            <div class="admin-menu-item">
+                <div><strong>${o.orderId}</strong><br>${o.guestName}<br>${new Date(o.createdAt).toLocaleString()}</div>
+                <div>${o.totalAmount.toFixed(2)} Br<br>${getStatusText(o.status)}</div>
+            </div>
+        `).join(''); 
+    }
+    
+    function renderReports() { 
+        let c = document.getElementById("reportStats"); 
+        if(!c) return; 
+        let total = orders.reduce((s, o) => s + o.totalAmount, 0); 
+        let avg = orders.length ? total / orders.length : 0; 
+        let itemCount = {};
+        orders.forEach(o => { o.items.forEach(i => { itemCount[i.name] = (itemCount[i.name] || 0) + i.quantity; }); });
+        let popular = Object.entries(itemCount).sort((a,b) => b[1] - a[1]).slice(0, 3);
+        let popularText = popular.map(([name, qty]) => `${name} (${qty} шт.)`).join(", ") || "Нет данных";
+        c.innerHTML = `<div style="background:white; padding:1.5rem; border-radius:20px;"><p>📊 Общая выручка: ${total.toFixed(2)} Br</p><p>🧾 Заказов: ${orders.length}</p><p>💳 Средний чек: ${avg.toFixed(2)} Br</p><p>🍽️ Популярные блюда: ${popularText}</p></div>`; 
+    }
+
+    let refreshInterval = null;
+    function startAutoRefresh() {
+        if (refreshInterval) clearInterval(refreshInterval);
+        refreshInterval = setInterval(() => {
+            if (document.getElementById("mainContent").classList.contains("visible")) {
+                loadData();
+                renderAdminOrders();
+                renderReports();
+            }
+        }, 3000);
+    }
+
+    document.getElementById("loginBtn").onclick = login;
+    document.getElementById("passwordInput").onkeypress = (e) => { if (e.key === "Enter") login(); };
+
+    document.querySelectorAll(".admin-tab").forEach(tab => {
+        tab.onclick = () => {
+            document.querySelectorAll(".admin-tab").forEach(t => t.classList.remove("active"));
+            tab.classList.add("active");
+            document.querySelectorAll(".admin-tab-content").forEach(c => c.classList.remove("active"));
+            document.getElementById(`adminTab${tab.dataset.tab.charAt(0).toUpperCase() + tab.dataset.tab.slice(1)}`).classList.add("active");
+            if(tab.dataset.tab === "reports") renderReports();
+            if(tab.dataset.tab === "orders") renderAdminOrders();
+        };
+    });
+
+    checkAuth();
+</script>
+</body>
+</html>
