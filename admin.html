@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кухня — Ресторан Amelie</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+        body {
+            background: #fefaf5;
+            color: #2c2418;
+            padding: 20px;
+            padding-bottom: 60px;
+        }
+        .header {
+            background: #2c2418;
+            color: #f9e7d9;
+            padding: 1rem 2rem;
+            border-radius: 20px;
+            margin-bottom: 2rem;
+        }
+        .header h1 {
+            font-size: 1.5rem;
+        }
+        .kitchen-tabs {
+            display: flex;
+            gap: 0.8rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .kitchen-tab {
+            background: #f0e4d8;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 40px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: 0.2s;
+            color: #5c4b36;
+            font-weight: 500;
+        }
+        .kitchen-tab.active {
+            background: #2c2418;
+            color: white;
+        }
+        .kitchen-tab:hover:not(.active) {
+            background: #e8d9ce;
+        }
+        .kitchen-orders-grid {
+            display: grid;
+            gap: 1rem;
+        }
+        .kitchen-order-card {
+            background: white;
+            border-radius: 20px;
+            padding: 1.2rem;
+            border-left: 6px solid #c97e5a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .status-badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .status-new {
+            background: #ffd966;
+            color: #6b4c1a;
+        }
+        .status-cooking {
+            background: #ffb347;
+            color: #4a2c00;
+        }
+        .status-ready {
+            background: #8fc93a;
+            color: #2c4a1a;
+        }
+        .btn-primary {
+            background: #c97e5a;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+        .btn-primary:hover {
+            background: #b06442;
+        }
+        .btn-secondary {
+            background: #2c2418;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+        .btn-secondary:hover {
+            background: #c97e5a;
+        }
+        .empty-orders {
+            text-align: center;
+            padding: 40px;
+            color: #a18f78;
+            background: white;
+            border-radius: 20px;
+        }
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: #2c2418;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 40px;
+            z-index: 9999;
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Стили для формы входа */
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+        .login-box {
+            background: white;
+            padding: 2rem;
+            border-radius: 28px;
+            width: 90%;
+            max-width: 350px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        .login-box h2 {
+            margin-bottom: 1.5rem;
+            color: #2c2418;
+        }
+        .login-box input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 1rem;
+            border: 1px solid #e2d4c8;
+            border-radius: 40px;
+            font-size: 1rem;
+            text-align: center;
+        }
+        .login-box button {
+            width: 100%;
+            padding: 12px;
+            background: #c97e5a;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .login-box button:hover {
+            background: #b06442;
+        }
+        .error-msg {
+            color: #c97e5a;
+            margin-top: 10px;
+            font-size: 0.85rem;
+        }
+        .main-content {
+            display: none;
+        }
+        .main-content.visible {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Форма входа -->
+<div id="loginOverlay" class="login-overlay">
+    <div class="login-box">
+        <h2>🍳 Вход на кухню</h2>
+        <input type="password" id="passwordInput" placeholder="Введите пароль" autofocus>
+        <button id="loginBtn">Войти</button>
+        <div id="loginError" class="error-msg"></div>
+    </div>
+</div>
+
+<!-- Основной контент (скрыт до входа) -->
+<div id="mainContent" class="main-content">
+    <div class="header">
+        <h1>🍳 Кухонный терминал — Ресторан Amelie</h1>
+    </div>
+
+    <div class="kitchen-tabs">
+        <button class="kitchen-tab active" data-filter="all">Все</button>
+        <button class="kitchen-tab" data-filter="new">🆕 Новые</button>
+        <button class="kitchen-tab" data-filter="cooking">👨‍🍳 Готовятся</button>
+        <button class="kitchen-tab" data-filter="ready">✅ Готово</button>
+    </div>
+
+    <div id="kitchenOrdersList" class="kitchen-orders-grid"></div>
+</div>
+
+<script>
+    // ПАРОЛЬ ДЛЯ КУХНИ (можно поменять на любой)
+    const KITCHEN_PASSWORD = "kitchen2026";
+
+    let orders = [];
+
+    // Проверка входа
+    function checkAuth() {
+        const isAuthenticated = sessionStorage.getItem("kitchen_auth");
+        if (isAuthenticated === "true") {
+            document.getElementById("loginOverlay").style.display = "none";
+            document.getElementById("mainContent").classList.add("visible");
+            loadOrders();
+            startAutoRefresh();
+        } else {
+            document.getElementById("loginOverlay").style.display = "flex";
+            document.getElementById("mainContent").classList.remove("visible");
+        }
+    }
+
+    function login() {
+        const password = document.getElementById("passwordInput").value;
+        if (password === KITCHEN_PASSWORD) {
+            sessionStorage.setItem("kitchen_auth", "true");
+            checkAuth();
+        } else {
+            document.getElementById("loginError").innerText = "❌ Неверный пароль";
+        }
+    }
+
+    function logout() {
+        sessionStorage.removeItem("kitchen_auth");
+        checkAuth();
+    }
+
+    function loadOrders() {
+        let o = localStorage.getItem("ameli_orders");
+        if (o) orders = JSON.parse(o);
+        renderKitchen();
+    }
+
+    function saveOrders() {
+        localStorage.setItem("ameli_orders", JSON.stringify(orders));
+    }
+
+    function showToast(msg) {
+        let t = document.createElement("div");
+        t.className = "toast";
+        t.innerText = msg;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 2000);
+    }
+
+    function getStatusText(s) {
+        let m = { new: "🆕 Новый", cooking: "👨‍🍳 Готовится", ready: "✅ Готов", completed: "💰 Завершён" };
+        return m[s] || s;
+    }
+
+    function updateOrderStatus(orderId, newStatus) {
+        let order = orders.find(o => o.orderId === orderId);
+        if (order) {
+            order.status = newStatus;
+            saveOrders();
+            renderKitchen();
+            showToast(`Заказ ${orderId} → ${getStatusText(newStatus)}`);
+        }
+    }
+
+    let kitchenFilter = "all";
+
+    function renderKitchen() {
+        let container = document.getElementById("kitchenOrdersList");
+        if (!container) return;
+
+        let filtered = orders.filter(o => o.status !== "completed");
+        if (kitchenFilter !== "all") filtered = filtered.filter(o => o.status === kitchenFilter);
+
+        if (filtered.length === 0) {
+            container.innerHTML = '<div class="empty-orders">🍽️ Нет активных заказов</div>';
+            return;
+        }
+
+        container.innerHTML = filtered.map(order => `
+            <div class="kitchen-order-card">
+                <div>
+                    <strong>${order.orderId}</strong><br>
+                    ${order.guestName}<br>
+                    Стол ${order.tableNumber}
+                </div>
+                <div>
+                    ${order.items.map(i => `${i.name} x${i.quantity}`).join(", ")}
+                </div>
+                <div>
+                    <span class="status-badge status-${order.status === 'new' ? 'new' : (order.status === 'cooking' ? 'cooking' : 'ready')}">
+                        ${getStatusText(order.status)}
+                    </span>
+                </div>
+                <div>
+                    ${order.status === "new" ? `<button class="btn-secondary" onclick="updateOrderStatus('${order.orderId}', 'cooking')">🔪 Начать готовку</button>` : ""}
+                    ${order.status === "cooking" ? `<button class="btn-primary" onclick="updateOrderStatus('${order.orderId}', 'ready')">✅ Готово</button>` : ""}
+                    ${order.status === "ready" ? `<button class="btn-primary" onclick="updateOrderStatus('${order.orderId}', 'completed')">💰 Выдать гостю</button>` : ""}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    let refreshInterval = null;
+    function startAutoRefresh() {
+        if (refreshInterval) clearInterval(refreshInterval);
+        refreshInterval = setInterval(() => {
+            if (document.getElementById("mainContent").classList.contains("visible")) {
+                loadOrders();
+            }
+        }, 3000);
+    }
+
+    // Назначение обработчиков
+    document.getElementById("loginBtn").onclick = login;
+    document.getElementById("passwordInput").onkeypress = (e) => { if (e.key === "Enter") login(); };
+
+    document.querySelectorAll(".kitchen-tab").forEach(tab => {
+        tab.onclick = () => {
+            document.querySelectorAll(".kitchen-tab").forEach(t => t.classList.remove("active"));
+            tab.classList.add("active");
+            kitchenFilter = tab.dataset.filter;
+            renderKitchen();
+        };
+    });
+
+    window.updateOrderStatus = updateOrderStatus;
+
+    // Запуск проверки
+    checkAuth();
+</script>
+</body>
+</html>
