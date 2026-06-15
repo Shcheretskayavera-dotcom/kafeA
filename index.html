@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Гость — Ресторан Amelie</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background: #fefaf5; color: #2c2418; padding-bottom: 60px; }
+        .navbar { background: #2c2418; color: #f9e7d9; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; position: sticky; top: 0; z-index: 100; }
+        .logo { font-size: 1.5rem; font-weight: 700; }
+        .logo span { color: #e8b48c; }
+        .nav-links { display: flex; gap: 0.8rem; flex-wrap: wrap; }
+        .nav-links button { background: none; border: none; color: #f9e7d9; padding: 0.5rem 1.2rem; border-radius: 30px; cursor: pointer; font-size: 0.95rem; transition: 0.2s; }
+        .nav-links button:hover, .nav-links button.active { background: #e8b48c; color: #2c2418; }
+        .cart-icon { background: #e8b48c; padding: 0.5rem 1.2rem; border-radius: 40px; cursor: pointer; font-weight: bold; color: #2c2418; }
+        .container { max-width: 1300px; margin: 0 auto; padding: 2rem; }
+        .page { display: none; animation: fadeIn 0.3s ease; }
+        .page.active-page { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .hero { text-align: center; margin-bottom: 2rem; }
+        .hero h1 { font-size: 2.2rem; }
+        .categories { display: flex; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 2px solid #f0e4d8; }
+        .cat-btn { background: none; border: none; padding: 0.6rem 1.5rem; border-radius: 40px; cursor: pointer; color: #5c4b36; font-weight: 500; }
+        .cat-btn.active { background: #2c2418; color: white; }
+        .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.8rem; }
+        .menu-card { background: white; border-radius: 24px; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.05); border: 1px solid #f0e4d8; transition: transform 0.2s; }
+        .menu-card:hover { transform: translateY(-5px); }
+        .card-img { height: 120px; background: linear-gradient(135deg, #f5ede4, #e8d9ce); display: flex; align-items: center; justify-content: center; font-size: 3rem; }
+        .card-content { padding: 1.2rem; }
+        .card-title { font-size: 1.2rem; font-weight: 700; }
+        .card-desc { color: #8b765c; font-size: 0.8rem; margin: 0.5rem 0; }
+        .price { font-size: 1.3rem; font-weight: 800; color: #c97e5a; margin: 0.7rem 0; }
+        .add-btn { background: #2c2418; color: white; border: none; width: 100%; padding: 0.8rem; border-radius: 40px; font-weight: 600; cursor: pointer; }
+        .add-btn:hover { background: #c97e5a; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 1000; }
+        .modal-content { background: white; width: 90%; max-width: 550px; border-radius: 28px; padding: 1.8rem; max-height: 80vh; overflow-y: auto; }
+        .close-modal { float: right; font-size: 1.8rem; cursor: pointer; }
+        .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem 0; border-bottom: 1px solid #f0e4d8; }
+        .cart-total { font-size: 1.3rem; font-weight: bold; text-align: right; margin: 1rem 0; }
+        .btn-primary { background: #c97e5a; color: white; border: none; padding: 0.8rem 1.8rem; border-radius: 40px; font-weight: 600; cursor: pointer; }
+        .btn-large { width: 100%; padding: 1rem; font-size: 1.1rem; }
+        .order-container { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+        @media (max-width: 800px) { .order-container { grid-template-columns: 1fr; } }
+        .order-summary, .order-form { background: white; padding: 1.8rem; border-radius: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .form-group { margin-bottom: 1.2rem; }
+        .form-group label { display: block; margin-bottom: 0.4rem; font-weight: 500; }
+        .form-group input, .form-group select { width: 100%; padding: 0.8rem; border: 1px solid #e2d4c8; border-radius: 12px; }
+        .tracking-container { max-width: 700px; margin: 0 auto; }
+        .tracking-input { display: flex; gap: 1rem; margin: 1.5rem 0; }
+        .tracking-input input { flex: 1; padding: 0.8rem; border: 1px solid #e2d4c8; border-radius: 12px; }
+        .order-status-card { background: white; padding: 1.5rem; border-radius: 24px; margin: 1.5rem 0; }
+        .status-timeline { display: flex; justify-content: space-between; margin: 1.5rem 0; flex-wrap: wrap; }
+        .status-step { text-align: center; flex: 1; opacity: 0.4; font-size: 0.85rem; }
+        .status-step.completed { opacity: 1; color: #2c8c5a; }
+        .toast { position: fixed; bottom: 20px; left: 20px; background: #2c2418; color: white; padding: 12px 20px; border-radius: 40px; z-index: 9999; animation: slideIn 0.3s ease; }
+        @keyframes slideIn { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .empty-cart { text-align: center; padding: 30px; color: #a18f78; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+<div class="navbar">
+    <div class="logo">🍽️ Ресторан <span>Amelie</span></div>
+    <div class="nav-links">
+        <button class="nav-btn active" data-page="menu">📋 Меню</button>
+        <button class="nav-btn" data-page="order">📝 Заказ</button>
+        <button class="nav-btn" data-page="status">🔍 Статус</button>
+    </div>
+    <div class="cart-icon" id="cartIcon">🛒 <span id="cartCount">0</span></div>
+</div>
+
+<div id="pageMenu" class="page active-page">
+    <div class="container">
+        <div class="hero"><h1>Электронное меню</h1><p>Выберите блюда</p></div>
+        <div class="categories" id="categoriesFilter"></div>
+        <div class="menu-grid" id="menuContainer"></div>
+    </div>
+</div>
+
+<div id="pageOrder" class="page">
+    <div class="container">
+        <div class="order-container">
+            <div class="order-summary"><h2>📋 Заказ</h2><div id="orderSummaryItems"></div><div class="cart-total" id="orderSummaryTotal"></div></div>
+            <div class="order-form">
+                <h2>👤 Данные</h2>
+                <div class="form-group"><label>Имя *</label><input type="text" id="guestName" placeholder="Иван Иванов"></div>
+                <div class="form-group"><label>Телефон *</label><input type="tel" id="guestPhone" placeholder="+375 (XX) XXX-XX-XX"></div>
+                <div class="form-group"><label>Email</label><input type="email" id="guestEmail" placeholder="example@mail.ru"></div>
+                <div class="form-group"><label>Стол *</label><select id="tableSelect"></select></div>
+                <div class="form-group"><label>Оплата</label><select id="paymentMethod"><option value="card">💳 Карта</option><option value="cash">💵 Наличные</option></select></div>
+                <div class="form-group"><label style="display: flex; gap: 10px; cursor: pointer;"><input type="checkbox" id="consentCheckbox" style="width: 18px;"><span style="font-size: 0.85rem;">Я даю согласие на обработку персональных данных</span></label></div>
+                <button class="btn-primary btn-large" id="submitOrderBtn">✅ Подтвердить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="pageStatus" class="page">
+    <div class="container">
+        <div class="tracking-container">
+            <h1>📦 Статус заказа</h1>
+            <div class="tracking-input"><input type="text" id="trackingOrderId" placeholder="Номер заказа"><button class="btn-primary" id="trackOrderBtn">Отследить</button></div>
+            <div id="orderStatusDisplay" class="order-status-card hidden"></div>
+            <h3>Недавние заказы</h3><div id="recentOrdersList"></div>
+        </div>
+    </div>
+</div>
+
+<div id="cartModal" class="modal"><div class="modal-content"><span class="close-modal" id="closeModalBtn">&times;</span><h2>🛒 Корзина</h2><div id="cartItemsList"></div><div id="cartTotal"></div><button class="btn-primary" id="modalCheckoutBtn">Оформить →</button></div></div>
+
+<script>
+    let menuData = [
+        { id: 1, name: "Цезарь с курицей", desc: "Классический соус", price: 12.90, category: "Салаты", emoji: "🥗", available: true },
+        { id: 2, name: "Том Ям", desc: "Острый суп", price: 14.50, category: "Супы", emoji: "🍲", available: true },
+        { id: 3, name: "Рибай стейк", desc: "Мраморная говядина", price: 34.90, category: "Основные блюда", emoji: "🥩", available: true },
+        { id: 4, name: "Паста Карбонара", desc: "Сливочный соус", price: 16.90, category: "Основные блюда", emoji: "🍝", available: true },
+        { id: 5, name: "Чизкейк", desc: "Нежный сыр", price: 6.90, category: "Десерты", emoji: "🍰", available: true },
+        { id: 6, name: "Американо", desc: "Эспрессо", price: 3.50, category: "Напитки", emoji: "☕", available: true },
+        { id: 7, name: "Матча латте", desc: "Японский чай", price: 5.20, category: "Напитки", emoji: "🍵", available: true },
+        { id: 8, name: "Брускетта", desc: "Томаты, базилик", price: 8.90, category: "Закуски", emoji: "🥖", available: true },
+        { id: 9, name: "Греческий салат", desc: "Фета, маслины", price: 11.50, category: "Салаты", emoji: "🥗", available: true },
+        { id: 10, name: "Картошка фри", desc: "Хрустящая", price: 4.90, category: "Закуски", emoji: "🍟", available: true }
+    ];
+    let tables = [{ id: 1, number: 1, capacity: 2, status: "free", location: "У окна" },{ id: 2, number: 2, capacity: 4, status: "free", location: "Центр" },{ id: 3, number: 3, capacity: 2, status: "free", location: "У окна" },{ id: 4, number: 4, capacity: 6, status: "free", location: "ВИП" },{ id: 5, number: 5, capacity: 4, status: "free", location: "Балкон" }];
+    let orders = [], cart = [];
+
+    function loadData() {
+        let o = localStorage.getItem("ameli_orders"); if(o) orders = JSON.parse(o);
+        let c = localStorage.getItem("ameli_cart"); if(c) cart = JSON.parse(c);
+        let t = localStorage.getItem("ameli_tables"); if(t) tables = JSON.parse(t);
+    }
+    function saveAll() { localStorage.setItem("ameli_orders", JSON.stringify(orders)); localStorage.setItem("ameli_cart", JSON.stringify(cart)); localStorage.setItem("ameli_tables", JSON.stringify(tables)); }
+    function showToast(msg) { let t=document.createElement("div"); t.className="toast"; t.innerText=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2000); }
+    function updateCartCounter() { let c=cart.reduce((s,i)=>s+i.quantity,0); document.getElementById("cartCount").innerText=c; }
+    function addToCart(item) { let e=cart.find(i=>i.id===item.id); if(e) e.quantity++; else cart.push({...item,quantity:1}); saveAll(); updateCartCounter(); showToast(`✓ ${item.name} добавлено`); renderCartModal(); }
+    function removeFromCart(id) { let i=cart.findIndex(i=>i.id===id); if(i!==-1){if(cart[i].quantity>1) cart[i].quantity--; else cart.splice(i,1); saveAll(); updateCartCounter(); renderCartModal();} }
+    function renderCartModal() { let cont=document.getElementById("cartItemsList"), tot=document.getElementById("cartTotal"); if(!cont) return; if(cart.length===0){cont.innerHTML='<div class="empty-cart">Корзина пуста</div>'; if(tot)tot.innerHTML=""; return;} let total=0; cont.innerHTML=cart.map(i=>{total+=i.price*i.quantity; return `<div class="cart-item"><div><strong>${i.name}</strong> x${i.quantity}<br><small>${i.price.toFixed(2)} Br</small></div><div><button class="cart-minus" data-id="${i.id}">−</button><span style="margin:0 10px;">${i.quantity}</span><button class="cart-plus" data-id="${i.id}">+</button></div></div>`;}).join(''); if(tot)tot.innerHTML=`Итого: ${total.toFixed(2)} Br`; document.querySelectorAll(".cart-minus").forEach(b=>b.onclick=()=>removeFromCart(parseInt(b.dataset.id))); document.querySelectorAll(".cart-plus").forEach(b=>b.onclick=()=>{let id=parseInt(b.dataset.id), it=cart.find(i=>i.id===id); if(it){it.quantity++; saveAll(); updateCartCounter(); renderCartModal();}}); }
+    function generateOrderId() { return "ORD-"+Date.now().toString().slice(-6); }
+    let currentCategory="Все";
+    function renderMenu() { let f=currentCategory==="Все"?menuData.filter(m=>m.available):menuData.filter(m=>m.category===currentCategory&&m.available); let c=document.getElementById("menuContainer"); if(!c)return; c.innerHTML=f.map(i=>`<div class="menu-card"><div class="card-img">${i.emoji} 🍽️</div><div class="card-content"><div class="card-title">${i.name}</div><div class="card-desc">${i.desc}</div><div class="price">${i.price.toFixed(2)} Br</div><button class="add-btn" data-id="${i.id}" data-name="${i.name}" data-price="${i.price}">➕ В корзину</button></div></div>`).join(''); document.querySelectorAll(".add-btn").forEach(b=>b.onclick=()=>addToCart({id:parseInt(b.dataset.id),name:b.dataset.name,price:parseFloat(b.dataset.price)})); }
+    function setupCategories() { let cats=["Все",...new Set(menuData.map(m=>m.category))]; let c=document.getElementById("categoriesFilter"); if(!c)return; c.innerHTML=cats.map(cat=>`<button class="cat-btn ${cat===currentCategory?'active':''}" data-cat="${cat}">${cat}</button>`).join(''); document.querySelectorAll(".cat-btn").forEach(b=>b.onclick=()=>{currentCategory=b.dataset.cat; setupCategories(); renderMenu();}); }
+    function renderOrderSummary() { let c=document.getElementById("orderSummaryItems"), t=document.getElementById("orderSummaryTotal"); if(!c)return; if(cart.length===0){c.innerHTML='<div class="empty-cart">Корзина пуста</div>'; if(t)t.innerHTML=""; return;} let total=0; c.innerHTML=cart.map(i=>{total+=i.price*i.quantity; return `<div>${i.name} x${i.quantity} = ${(i.price*i.quantity).toFixed(2)} Br</div>`;}).join(''); if(t)t.innerHTML=`Итого: ${total.toFixed(2)} Br`; }
+    function renderTablesSelect() { let s=document.getElementById("tableSelect"); if(!s)return; s.innerHTML='<option value="">-- Выберите стол --</option>'+tables.filter(t=>t.status==="free").map(t=>`<option value="${t.id}">Стол ${t.number} (${t.capacity} места) - ${t.location}</option>`).join(''); }
+    function getStatusText(s) { let m={new:"🆕 Новый",cooking:"👨‍🍳 Готовится",ready:"✅ Готов",completed:"💰 Завершён"}; return m[s]||s; }
+    function renderRecentOrders() { let c=document.getElementById("recentOrdersList"); if(!c)return; let r=[...orders].reverse().slice(0,5); if(r.length===0){c.innerHTML="<p>Нет заказов</p>";return;} c.innerHTML=r.map(o=>`<div style="background:white;padding:10px;border-radius:12px;margin-bottom:8px;"><strong>${o.orderId}</strong> - ${getStatusText(o.status)}<br>${o.guestName}</div>`).join(''); }
+    function trackOrder() { let id=document.getElementById("trackingOrderId").value.trim(), o=orders.find(o=>o.orderId===id), d=document.getElementById("orderStatusDisplay"); if(!o){d.innerHTML='<div style="color:red;">❌ Заказ не найден</div>'; d.classList.remove("hidden"); return;} let st=["new","cooking","ready","completed"], idx=st.indexOf(o.status); d.innerHTML=`<h3>${o.orderId}</h3><div class="status-timeline">${st.map((s,i)=>`<div class="status-step ${i<=idx?'completed':''}">${getStatusText(s)}</div>`).join('')}</div><div><strong>Гость:</strong> ${o.guestName}</div><div><strong>Стол:</strong> ${o.tableNumber}</div><div><strong>Сумма:</strong> ${o.totalAmount.toFixed(2)} Br</div>`; d.classList.remove("hidden"); }
+    function submitOrder() { let ch=document.getElementById("consentCheckbox"); if(!ch||!ch.checked){showToast("Дайте согласие на обработку данных"); return;} if(cart.length===0){showToast("Корзина пуста"); return;} let n=document.getElementById("guestName")?.value.trim(), p=document.getElementById("guestPhone")?.value.trim(), tId=document.getElementById("tableSelect")?.value; if(!n||!p||!tId){showToast("Заполните все поля"); return;} let t=tables.find(t=>t.id==tId); if(!t)return; let total=cart.reduce((s,i)=>s+i.price*i.quantity,0), newOrder={orderId:generateOrderId(),guestName:n,guestPhone:p,guestEmail:document.getElementById("guestEmail")?.value||"",tableId:t.id,tableNumber:t.number,items:[...cart],totalAmount:total,status:"new",createdAt:new Date().toISOString()}; orders.unshift(newOrder); t.status="occupied"; cart=[]; saveAll(); updateCartCounter(); showToast(`✅ Заказ ${newOrder.orderId} принят!`); document.getElementById("trackingOrderId").value=newOrder.orderId; document.querySelector("[data-page='status']").click(); renderRecentOrders(); if(document.getElementById("orderSummaryItems")) renderOrderSummary(); }
+    let currentPage="menu";
+    function switchPage(p) { document.querySelectorAll(".page").forEach(el=>el.classList.remove("active-page")); document.getElementById(`page${p.charAt(0).toUpperCase()+p.slice(1)}`).classList.add("active-page"); document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active")); document.querySelector(`.nav-btn[data-page="${p}"]`).classList.add("active"); if(p==="menu"){renderMenu();setupCategories();} if(p==="order"){renderOrderSummary();renderTablesSelect();} if(p==="status"){renderRecentOrders();} }
+    loadData(); updateCartCounter(); renderMenu(); setupCategories(); renderRecentOrders();
+    document.querySelectorAll(".nav-btn").forEach(b=>b.onclick=()=>switchPage(b.dataset.page));
+    document.getElementById("cartIcon").onclick=()=>{document.getElementById("cartModal").style.display="flex"; renderCartModal();};
+    document.getElementById("closeModalBtn").onclick=()=>document.getElementById("cartModal").style.display="none";
+    document.getElementById("modalCheckoutBtn").onclick=()=>{document.getElementById("cartModal").style.display="none"; switchPage("order");};
+    window.onclick=(e)=>{if(e.target===document.getElementById("cartModal")) document.getElementById("cartModal").style.display="none";};
+    document.getElementById("submitOrderBtn")&&(document.getElementById("submitOrderBtn").onclick=submitOrder);
+    document.getElementById("trackOrderBtn")&&(document.getElementById("trackOrderBtn").onclick=trackOrder);
+</script>
+</body>
+</html>
